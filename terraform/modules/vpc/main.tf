@@ -20,7 +20,9 @@ resource "aws_subnet" "public_subnet_a" {
   availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
-    Name = "main-vpc-public-a"
+    Name                                        = "main-vpc-public-a"
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 
@@ -30,7 +32,9 @@ resource "aws_subnet" "public_subnet_b" {
   availability_zone = data.aws_availability_zones.available.names[1]
 
   tags = {
-    Name = "main-vpc-public-b"
+    Name                                        = "main-vpc-public-b"
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 
@@ -41,7 +45,9 @@ resource "aws_subnet" "private_subnet_a" {
   availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
-    Name = "main-vpc-private-a"
+    Name                                        = "main-vpc-private-a"
+    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 
@@ -51,10 +57,13 @@ resource "aws_subnet" "private_subnet_b" {
   availability_zone = data.aws_availability_zones.available.names[1]
 
   tags = {
-    Name = "main-vpc-private-b"
+    Name                                        = "main-vpc-private-b"
+    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 
+# Private subnets (Db layer)
 resource "aws_subnet" "private_subnet_c" {
   vpc_id            = aws_vpc.main_vpc.id
   cidr_block        = var.private_subnet_c_cidr
@@ -147,5 +156,15 @@ resource "aws_route_table_association" "private_association_a" {
 
 resource "aws_route_table_association" "private_association_b" {
   subnet_id      = aws_subnet.private_subnet_b.id
+  route_table_id = aws_route_table.private_route_table.id
+}
+
+resource "aws_route_table_association" "private_association_c" {
+  subnet_id      = aws_subnet.private_subnet_c.id
+  route_table_id = aws_route_table.private_route_table.id
+}
+
+resource "aws_route_table_association" "private_association_d" {
+  subnet_id      = aws_subnet.private_subnet_d.id
   route_table_id = aws_route_table.private_route_table.id
 }

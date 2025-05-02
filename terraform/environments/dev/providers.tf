@@ -8,6 +8,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.12"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.26"
+    }
   }
 
   required_version = ">= 1.5.0"
@@ -15,4 +19,19 @@ terraform {
 
 provider "aws" {
   region = var.region
+}
+
+# These use your EKS cluster connection (must be after aws_eks_cluster and auth data sources)
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.this.token
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    token                  = data.aws_eks_cluster_auth.this.token
+  }
 }

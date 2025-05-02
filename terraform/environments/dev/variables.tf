@@ -30,8 +30,21 @@ variable "private_subnet_d_cidr" {
   description = "cidr block for private subnet d"
 }
 
-variable "availability_zones" {
-  description = "List of availability zones to use"
-  type        = list(string)
-  default     = [] # It can be dynamically populated via AWS data source
+variable "cluster_name" {
+  default = "dev-eks-cluster"
+}
+
+variable "accountsdb_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "cardsdb_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "loansdb_password" {
+  type      = string
+  sensitive = true
 }
