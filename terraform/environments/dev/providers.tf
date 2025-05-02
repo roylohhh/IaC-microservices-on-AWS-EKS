@@ -21,7 +21,7 @@ provider "aws" {
   region = var.region
 }
 
-# These use your EKS cluster connection (must be after aws_eks_cluster and auth data sources)
+# These use EKS cluster connection (placed after aws_eks_cluster and auth data sources)
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
