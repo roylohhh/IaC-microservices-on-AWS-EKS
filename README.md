@@ -151,36 +151,15 @@ kubectl get nodes
 You can now interact with the cluster from your terminal using kubectl.
 ```
 
-### Security Groups
-Security groups are configured to enforce strict network access controls between infrastructure components. Each layer of the architecture has its own dedicated security group to ensure separation of concerns and adhere to the principle of least privilege.
-
-**ALB Security Group:**
-
-- Allows inbound HTTP/HTTPS traffic from the internet.
-
-- Forwards traffic only to the application layer (EKS worker nodes) on the specified application port (e.g., 8080).
-
-**Application Security Group (Spring Boot microservices on EKS):**
-
-- Accepts inbound traffic only from the ALB security group on the application port.
-
-- Has no direct internet exposure, enhancing security of internal services.
-
-**Database Security Group (RDS PostgreSQL):**
-
-- Allows inbound connections only from the application security group on the database port (e.g., 5432).
-
-- Denies all other external access by default.
-
-**Egress Rules:**
-
-- Controlled outbound access is allowed as needed (e.g., allowing the app layer to access external APIs or repositories through NAT gateways).
-
-These security groups work in conjunction with subnet isolation to create a secure, multi-tiered network architecture that minimizes attack surface while maintaining functionality.
-
 ### RDS (PostgreSQL Database)
 
 A PostgreSQL instance is provisioned via RDS in a private subnet and is only accessible from the Spring Boot application's security group, ensuring secure and controlled database access.
+
+**Database Security Group (RDS PostgreSQL):**
+
+- Allows inbound connections only from the EKS security group on the database port (e.g., 5432).
+
+- Denies all other external access by default.
 
 ### AWS Load Balancer Controller with IAM & OIDC (IRSA)
 

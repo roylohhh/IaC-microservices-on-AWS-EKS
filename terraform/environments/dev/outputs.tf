@@ -13,3 +13,7 @@ output "loans_rds_endpoint" {
 output "eks_cluster_endpoint" {
   value = module.eks.cluster_endpoint
 }
+
+output "node_security_group_id" {
+  value = module.eks.node_security_group_id
+}

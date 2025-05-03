@@ -14,11 +14,6 @@ module "vpc" {
   cluster_name = var.cluster_name
 }
 
-module "security_groups" {
-  source = "../../modules/sg"
-  vpc_id = module.vpc.vpc_id
-}
-
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "20.8.4"
@@ -49,8 +44,6 @@ module "eks" {
       min_size     = 1
       max_size     = 3
       desired_size = 2
-
-      security_group_ids = [module.security_groups.app_sg_id]
     }
   }
 
@@ -68,7 +61,8 @@ module "rds_accounts" {
   password          = var.accountsdb_password
   instance_class    = "db.t3.micro"
   subnet_group      = aws_db_subnet_group.main.name
-  security_group_id = module.security_groups.rds_sg_id
+  vpc_id                     = module.vpc.vpc_id
+  allowed_security_group_ids = [module.eks.node_security_group_id]
 }
 
 module "rds_cards" {
@@ -79,7 +73,8 @@ module "rds_cards" {
   password          = var.cardsdb_password
   instance_class    = "db.t3.micro"
   subnet_group      = aws_db_subnet_group.main.name
-  security_group_id = module.security_groups.rds_sg_id
+  vpc_id                     = module.vpc.vpc_id
+  allowed_security_group_ids = [module.eks.node_security_group_id]
 }
 
 module "rds_loans" {
@@ -90,7 +85,8 @@ module "rds_loans" {
   password          = var.loansdb_password
   instance_class    = "db.t3.micro"
   subnet_group      = aws_db_subnet_group.main.name
-  security_group_id = module.security_groups.rds_sg_id
+  vpc_id                     = module.vpc.vpc_id
+  allowed_security_group_ids = [module.eks.node_security_group_id]
 }
 
 resource "aws_db_subnet_group" "main" {
@@ -114,3 +110,12 @@ module "alb_controller" {
 
   depends_on = [module.eks]
 }
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+  depends_on = [module.eks]
+}
+
+
+
+
