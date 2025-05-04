@@ -10,4 +10,4 @@ crash.*.log
 terraform.tfvars
 
 k8s-base/secrets
-.DS_Store
+.DS_Store/
