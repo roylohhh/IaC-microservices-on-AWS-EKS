@@ -79,3 +79,4 @@ resource "helm_release" "alb_controller" {
     value = "602401143452.dkr.ecr.${var.region}.amazonaws.com/amazon/aws-load-balancer-controller"
   }
 }
+

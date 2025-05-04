@@ -8,3 +8,5 @@ crash.*.log
 *.tfplan
 .terraform.lock.hcl
 terraform.tfvars
+
+k8s-base/secrets

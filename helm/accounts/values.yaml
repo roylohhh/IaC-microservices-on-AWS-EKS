@@ -7,31 +7,31 @@ replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  repository: 975050305249.dkr.ecr.us-east-1.amazonaws.com/accounts-microservice
+  repository: <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/<IMAGE_NAME>
   # This sets the pull policy for images.
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: e437c38
+  tag: <IMAGE_TAG>
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: 
-  - name: ecr-secret
+  - name: <IMAGE_PULL_SECRET_NAME> # ecr-secret
 # This is to override the chart name.
 nameOverride: ""
 fullnameOverride: ""
 
 env:
   - name: DB_HOST
-    value: accounts-db.c3cqmuwo2z07.us-east-1.rds.amazonaws.com
+    value: <RDS_ENDPOINT>
   - name: DB_NAME
-    value: accountsdb
+    value: <DB_NAME>
   - name: DB_USERNAME
-    value: s3895134
+    value: <DB_USERNAME>
   - name: DB_PASSWORD
     valueFrom:
       secretKeyRef:
-        name: accounts-db-secret
-        key: password
+        name: <DB_SECRET_NAME> # accounts-db-secret
+        key: <DB_PASSWORD_KEY>
 
 # This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
 serviceAccount:
@@ -82,9 +82,9 @@ ingress:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
     alb.ingress.kubernetes.io/group.name: core-services
-    alb.ingress.kubernetes.io/security-groups: sg-011d49626eac00320
+    alb.ingress.kubernetes.io/security-groups:  <ALB_SECURITY_GROUP_ID>
   hosts:
-    - host: accounts.fake.com
+    - host: <HOSTNAME> # accounts.fake.com
       paths:
         - path: /
           pathType: Prefix

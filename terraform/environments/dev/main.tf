@@ -54,39 +54,39 @@ module "eks" {
 }
 
 module "rds_accounts" {
-  source            = "../../modules/rds"
-  identifier        = "accounts-db"
-  db_name           = "accountsdb"
-  username          = "s3895134"
-  password          = var.accountsdb_password
-  instance_class    = "db.t3.micro"
-  subnet_group      = aws_db_subnet_group.main.name
-  vpc_id                     = module.vpc.vpc_id
-  allowed_security_group_ids = [module.eks.node_security_group_id]
+  source                 = "../../modules/rds"
+  identifier             = "accounts-db"
+  db_name                = "accountsdb"
+  username               = "s3895134"
+  password               = var.accountsdb_password
+  instance_class         = "db.t3.micro"
+  subnet_group           = aws_db_subnet_group.main.name
+  vpc_id                 = module.vpc.vpc_id
+  vpc_security_group_ids = [aws_security_group.rds.id]
 }
 
 module "rds_cards" {
-  source            = "../../modules/rds"
-  identifier        = "cards-db"
-  db_name           = "cardsdb"
-  username          = "s3895134"
-  password          = var.cardsdb_password
-  instance_class    = "db.t3.micro"
-  subnet_group      = aws_db_subnet_group.main.name
-  vpc_id                     = module.vpc.vpc_id
-  allowed_security_group_ids = [module.eks.node_security_group_id]
+  source                 = "../../modules/rds"
+  identifier             = "cards-db"
+  db_name                = "cardsdb"
+  username               = "s3895134"
+  password               = var.cardsdb_password
+  instance_class         = "db.t3.micro"
+  subnet_group           = aws_db_subnet_group.main.name
+  vpc_id                 = module.vpc.vpc_id
+  vpc_security_group_ids = [aws_security_group.rds.id]
 }
 
 module "rds_loans" {
-  source            = "../../modules/rds"
-  identifier        = "loans-db"
-  db_name           = "loansdb"
-  username          = "s3895134"
-  password          = var.loansdb_password
-  instance_class    = "db.t3.micro"
-  subnet_group      = aws_db_subnet_group.main.name
-  vpc_id                     = module.vpc.vpc_id
-  allowed_security_group_ids = [module.eks.node_security_group_id]
+  source                 = "../../modules/rds"
+  identifier             = "loans-db"
+  db_name                = "loansdb"
+  username               = "s3895134"
+  password               = var.loansdb_password
+  instance_class         = "db.t3.micro"
+  subnet_group           = aws_db_subnet_group.main.name
+  vpc_id                 = module.vpc.vpc_id
+  vpc_security_group_ids = [aws_security_group.rds.id]
 }
 
 resource "aws_db_subnet_group" "main" {
@@ -97,22 +97,19 @@ resource "aws_db_subnet_group" "main" {
   }
 }
 
-data "aws_eks_cluster_auth" "this" {
-  name = module.eks.cluster_name
-}
-
 module "alb_controller" {
-  source       = "../../modules/alb-controller"
-  cluster_name = module.eks.cluster_name
-  region       = var.region
-  vpc_id       = module.vpc.vpc_id
+  source            = "../../modules/alb-controller"
+  cluster_name      = module.eks.cluster_name
+  region            = var.region
+  vpc_id            = module.vpc.vpc_id
   oidc_provider_url = module.eks.cluster_oidc_issuer_url
 
   depends_on = [module.eks]
 }
 
+
 module "monitoring" {
-  source = "../../modules/monitoring"
+  source     = "../../modules/monitoring"
   depends_on = [module.eks]
 }
 
