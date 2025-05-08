@@ -24,10 +24,11 @@ This project demonstrates a production-grade infrastructure for deploying a cont
 - ✅ Helm charts for each microservice
 - ✅ Secrets and image pull setup for ECR/RDS
 - ✅ HPA for auto-scaling based on CPU/memory
-- ✅ Network policies for security between pods
 - ✅ Prometheus + Grafana monitoring stack
-- In progress: Argo CD GitOps integration
-- In progress: Storing secrets externally
+- ✅ Storing secrets externally
+- In progress: Argo CD GitOps integration and CD pipeline
+- In progress: Network policies for security between pods
+
 
 ## Tech Stack
 
@@ -40,11 +41,13 @@ This project demonstrates a production-grade infrastructure for deploying a cont
 
 ## Documentation
 
-- [AWS Infrastructure with Terraform](docs/aws-infrastructure.md)
-- [CI Pipeline with GitHub Actions](docs/ci-pipeline.md)
-- [Setting up Kubernetes Resources](docs/kubernetes-deployment.md)
-- Monitoring and Observability
-- Local Testing
+- [CI pipeline with GitHub Actions](docs/ci-pipeline.md)
+- [AWS Infrastructure](docs/aws-infrastructure.md)
+- [AWS ALB Ingress Controller](docs/alb-ingress-controller.md)
+- [Managing external Secrets](docs/external-secrets.md)
+- [Continuous Deployment with ArgoCD](docs/cd-pipeline.md)
+- [Monitoring and Observability with Prometheus and Grafana](docs/monitoring-and-observability.md)
+
 
 
 

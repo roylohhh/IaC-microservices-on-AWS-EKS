@@ -1,8 +1,8 @@
-### Workflow Overview
+# Workflow Overview
 Workflow file: .github/workflows/ci.yml
 Triggers: Runs on push to main or develop branches.
 
-### Pipeline Steps
+## Pipeline Steps
 **1. Checkout Code**
 
 Fetches the latest commit from the repository.

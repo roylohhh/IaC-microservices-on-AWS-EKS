@@ -9,5 +9,4 @@ crash.*.log
 .terraform.lock.hcl
 terraform.tfvars
 
-k8s-base/secrets
 .DS_Store/

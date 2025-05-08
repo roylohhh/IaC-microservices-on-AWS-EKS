@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cards
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: banking-microservices
+    app.kubernetes.io/component: cards
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/roylohhh/IaC-microservices-on-AWS-EKS
+    targetRevision: main
+    path: helm/cards
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -108,9 +108,13 @@ module "alb_controller" {
 }
 
 
-module "monitoring" {
-  source     = "../../modules/monitoring"
-  depends_on = [module.eks]
+module "external_secrets" {
+  source            = "../../modules/external-secrets"
+  cluster_name      = var.cluster_name
+  region            = var.region
+  account_id        = data.aws_caller_identity.current.account_id
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  secret_name_prefix = "db-secrets"
 }
 
 

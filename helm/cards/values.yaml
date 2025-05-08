@@ -15,23 +15,14 @@ image:
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: 
-  - name: <IMAGE_PULL_SECRET_NAME> # ecr-secret
+  - name: ecr-secret
 # This is to override the chart name.
 nameOverride: ""
 fullnameOverride: ""
 
-env:
-  - name: DB_HOST
-    value: <RDS_ENDPOINT>
-  - name: DB_NAME
-    value: <DB_NAME>
-  - name: DB_USERNAME
-    value: <DB_USERNAME>
-  - name: DB_PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: <DB_SECRET_NAME> # cards-db-secret
-        key: <DB_PASSWORD_KEY>
+envFrom:
+  - secretRef:
+      name: cards-db-credentials
 
 # This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
 serviceAccount:
@@ -82,7 +73,7 @@ ingress:
     alb.ingress.kubernetes.io/group.name: core-services
     alb.ingress.kubernetes.io/security-groups:  <ALB_SECURITY_GROUP_ID>
   hosts:
-    - host: <HOSTNAME> # cards.fake.com
+    - host: cards.fake.com
       paths:
         - path: /
           pathType: Prefix
