@@ -134,4 +134,4 @@ jobs:
           git config user.email "github-actions@github.com"
           git add helm/accounts/values.yaml helm/loans/values.yaml helm/cards/values.yaml
           git commit -m "Update Helm values with new ALB SG ID"
-          git push origin develop
+          git push origin main
