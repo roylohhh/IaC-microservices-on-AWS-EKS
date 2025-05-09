@@ -26,7 +26,7 @@ jobs:
 
       - name: Terraform Init & Apply
         run: |
-          cd terraform/environments/prod
+          cd terraform/environments/dev
           terraform init
           terraform apply -auto-approve
         env:
@@ -39,7 +39,7 @@ jobs:
       - name: Extract Terraform Outputs
         id: outputs
         run: |
-          cd terraform/environments/prod
+          cd terraform/environments/dev
           echo "accounts_rds_endpoint=$(terraform output -raw accounts_rds_endpoint)" >> $GITHUB_OUTPUT
           echo "loans_rds_endpoint=$(terraform output -raw loans_rds_endpoint)" >> $GITHUB_OUTPUT
           echo "cards_rds_endpoint=$(terraform output -raw cards_rds_endpoint)" >> $GITHUB_OUTPUT
