@@ -1,0 +1,137 @@
+name: CD Pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  provision-infra:
+    runs-on: ubuntu-latest
+
+    outputs:
+      accounts_rds_endpoint: ${{ steps.outputs.outputs.accounts_rds_endpoint }}
+      loans_rds_endpoint: ${{ steps.outputs.outputs.loans_rds_endpoint }}
+      cards_rds_endpoint: ${{ steps.outputs.outputs.cards_rds_endpoint }}
+      alb_sg_id: ${{ steps.outputs.outputs.alb_sg_id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init & Apply
+        run: |
+          cd terraform/environments/prod
+          terraform init
+          terraform apply -auto-approve
+        env:
+          TF_VAR_region: ${{ secrets.AWS_REGION }}
+          TF_VAR_cluster_name: ${{ secrets.CLUSTER_NAME }}
+          TF_VAR_accountsdb_password: ${{ secrets.DB_PASSWORD_ACCOUNTS }}
+          TF_VAR_loansdb_password: ${{ secrets.DB_PASSWORD_LOANS }}
+          TF_VAR_cardsdb_password: ${{ secrets.DB_PASSWORD_CARDS }}
+
+      - name: Extract Terraform Outputs
+        id: outputs
+        run: |
+          cd terraform/environments/prod
+          echo "accounts_rds_endpoint=$(terraform output -raw accounts_rds_endpoint)" >> $GITHUB_OUTPUT
+          echo "loans_rds_endpoint=$(terraform output -raw loans_rds_endpoint)" >> $GITHUB_OUTPUT
+          echo "cards_rds_endpoint=$(terraform output -raw cards_rds_endpoint)" >> $GITHUB_OUTPUT
+          echo "alb_sg_id=$(terraform output -raw alb_sg_id)" >> $GITHUB_OUTPUT
+
+  update-secrets:
+    needs: provision-infra
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python & Install Boto3
+        run: |
+          python -m pip install --upgrade pip
+          pip install boto3
+
+      - name: Update Secrets via Python
+        run: python scripts/update_secrets.py
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DB_NAME_ACCOUNTS: ${{ secrets.DB_NAME_ACCOUNTS }}
+          DB_USER_ACCOUNTS: ${{ secrets.DB_USER_ACCOUNTS }}
+          DB_PASSWORD_ACCOUNTS: ${{ secrets.DB_PASSWORD_ACCOUNTS }}
+          DB_NAME_LOANS: ${{ secrets.DB_NAME_LOANS }}
+          DB_USER_LOANS: ${{ secrets.DB_USER_LOANS }}
+          DB_PASSWORD_LOANS: ${{ secrets.DB_PASSWORD_LOANS }}
+          DB_NAME_CARDS: ${{ secrets.DB_NAME_CARDS }}
+          DB_USER_CARDS: ${{ secrets.DB_USER_CARDS }}
+          DB_PASSWORD_CARDS: ${{ secrets.DB_PASSWORD_CARDS }}
+          accounts_rds_endpoint: ${{ needs.provision-infra.outputs.accounts_rds_endpoint }}
+          loans_rds_endpoint: ${{ needs.provision-infra.outputs.loans_rds_endpoint }}
+          cards_rds_endpoint: ${{ needs.provision-infra.outputs.cards_rds_endpoint }}
+
+  update-values:
+    needs: provision-infra
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python & Install ruamel.yaml
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruamel.yaml
+
+      - name: Patch Helm values.yaml via Python
+        run: python scripts/patch_values.py
+        env:
+          ALB_SG_ID: ${{ needs.provision-infra.outputs.alb_sg_id }}
+
+  create-ecr-secret:
+    needs: update-values
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set up kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ secrets.AWS_REGION }} \
+            --name ${{ secrets.CLUSTER_NAME }}
+
+      - name: Create ECR image pull secret
+        run: |
+          kubectl create secret docker-registry ecr-secret \
+            --namespace=default \
+            --docker-username=AWS \
+            --docker-password="$(aws ecr get-login-password --region ${{ secrets.AWS_REGION }})" \
+            --docker-server=${{ secrets.ECR_REGISTRY }} \
+          || echo "Secret already exists"
+
+  commit-changes:
+    needs: create-ecr-secret
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Commit and Push Helm Changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add helm/accounts/values.yaml helm/loans/values.yaml helm/cards/values.yaml
+          git commit -m "Update Helm values with new ALB SG ID"
+          git push origin develop
