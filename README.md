@@ -47,6 +47,7 @@ This project demonstrates a production-grade infrastructure for deploying a cont
 - [Managing external Secrets](docs/external-secrets.md)
 - [Continuous Deployment with ArgoCD](docs/cd-pipeline.md)
 - [Monitoring and Observability with Prometheus and Grafana](docs/monitoring-and-observability.md)
+- [Testing(using local ingress)](docs/local-ingress-testing.md)
 
 
 

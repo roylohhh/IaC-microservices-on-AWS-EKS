@@ -47,32 +47,74 @@ To manage multiple microservices and shared resources declaratively, this setup 
   - ``selfHeal``: Automatically corrects drift
 
 
-## 3. GitOps-Based CD Pipeline — GitHub Actions Workflow
-This CD pipeline enables infrastructure and application deployment using a declarative, Git-driven approach.
+## 3. CD Pipeline — GitHub Actions Workflow
 
-### CD Pipeline Explained (Step-by-Step)
-#### 1. Terraform Apply: 
-GitHub Actions runs terraform apply to provision infrastructure (EKS, RDS, ALB, IAM roles, etc.)
+### Trigger:
 
-#### 2. Capture Outputs
-RDS endpoint and ALB Security Group ID are captured using terraform output.
+**Manual trigger:** Used for controlled, one-off or development-stage deployments. In production, push or pull_request triggers tied to branches are used instead.
 
-#### 3. Update Secrets Manager
-The rds_endpoint is dynamically injected into the banking-microservices secret in AWS Secrets Manager.
+### Job 1: ``provision-infra``
 
-#### 4. Update Helm values.yaml
-The ALB SG ID is inserted into each Helm chart’s values.yaml under the ingress.annotations field.
+This job provisions AWS infrastructure using Terraform and extracts dynamic outputs (RDS endpoints, ALB SG ID) for use in later jobs.
 
-#### 5. Create ecr-secret (Image Pull Secret)
-The pipeline generates a Kubernetes docker-registry secret (ecr-secret) to authenticate to Amazon ECR.
+### Key Steps
+| Step                        | Description                  | Why It’s Done                                               |
+| --------------------------- | ---------------------------- | ----------------------------------------------------------- |
+| `Checkout`                  | Clones the infra repo        | Required to access Terraform files                          |
+| `Configure AWS Credentials` | Sets up AWS access           | Enables Terraform to deploy infrastructure to AWS           |
+| `Terraform Init & Apply`    | Provisions all AWS resources | Creates VPC, EKS, RDS, ALB, etc.                            |
+| `Extract Terraform Outputs` | Captures RDS and ALB outputs | Needed to inject into Secrets Manager and Helm charts later |
 
-#### 6. Commit and Push to Git
-All modified files are committed and pushed to the infra repo's main branch.
+**Reasoning:** Terraform owns infra lifecycle; GitHub Actions dynamically retrieves outputs to inject downstream.
 
-#### 7. ArgoCD Auto-Sync
-ArgoCD watches the repo and syncs the updated Helm charts to EKS.
+### Job 2: ``update-secrets``
 
-This is a true GitOps pipeline — Git is the source of truth, and ArgoCD reconciles the cluster state automatically.
+Update AWS Secrets Manager with credentials and dynamic values (like RDS endpoints) using Python (boto3)
+
+### Key Steps
+| Step                | Description                      | Why It’s Done                                                 |
+| ------------------- | -------------------------------- | ------------------------------------------------------------- |
+| `Checkout`          | Access the secrets update script | Script is versioned in the repo                               |
+| `Install Boto3`     | Install AWS SDK for Python       | Required by `update_secrets.py`                               |
+| `Run Python Script` | Executes `update_secrets.py`     | Merges RDS endpoint + DB credentials into AWS Secrets Manager |
+
+Python is used here because boto3 and json in Python is far more readable and maintainable than nested jq and bash loops, making it more scalable.
+
+### Job 3: ``update-values``
+Update the values.yaml files in each Helm chart with the dynamically created ALB Security Group ID using Python
+
+### Key Steps
+| Step                  | Description                   | Why It’s Done                                       |
+| --------------------- | ----------------------------- | --------------------------------------------------- |
+| `Checkout`            | Access Helm values.yaml files | Needed to modify ingress config                     |
+| `Install ruamel.yaml` | Install YAML parser           | Enables safe in-place YAML modification             |
+| `Run Python Script`   | Executes `patch_values.py`    | Patches ALB SG ID into `.ingress.annotations` field |
+
+Modifying structured YAML in multiple charts is best handled with a proper parser (ruamel.yaml) instead of brittle yq commands.
+
+### Job 4: ``create-ecr-secret``
+Creates a Kubernetes ``ecr-secret`` to allow pulling private Docker images from Amazon ECR.
+
+### Key Steps
+| Step                        | Description                                           | Why It’s Done                                                 |
+| --------------------------- | ----------------------------------------------------- | ------------------------------------------------------------- |
+| `Configure AWS Credentials` | Injects AWS access keys into the environment          | Required to run `aws eks` and `aws ecr` CLI commands          |
+| `Set up kubeconfig for EKS` | Authenticates kubectl with your EKS cluster           | Ensures `kubectl` points to the correct cluster context       |
+| `Create ECR Secret`         | Creates a `docker-registry` secret named `ecr-secret` | Enables Kubernetes to authenticate with ECR for image pulling |
+
+
+The ecr-secret is created in the default namespace and automatically used in your Helm charts via the imagePullSecrets field. This step is idempotent — if the secret already exists, it will skip creation to avoid failure.
+
+### Job 5: ``commit-changes``
+Commit and push the modified values.yaml files (i.e. ALB SG ID updates) back to the Git repo so ArgoCD can sync them.
+
+### Key Steps
+| Step                  | Description                       | Why It’s Done                                             |
+| --------------------- | --------------------------------- | --------------------------------------------------------- |
+| `Checkout`            | Clones the repo to stage changes  | Required before `git commit`                              |
+| `git add/commit/push` | Pushes updated values.yaml to Git | ArgoCD syncs the updated Helm charts to EKS automatically |
+
+**GitOps Principle:** Git is the source of truth. Updating manifests in Git and letting ArgoCD sync them keeps everything declarative and auditable.
 
 ### Pipeline Summary
 
@@ -87,20 +129,3 @@ This is a true GitOps pipeline — Git is the source of truth, and ArgoCD reconc
 | 7    | ArgoCD auto-syncs from Git and deploys changes to the cluster          |
 
 
-## Simulate a Real Domain Locally using /etc/hosts
-
-We will now simulate a real domain by accessing our local microservice via postman at:
-
-```http://accounts.fake.com/actuator/health```
-
-1. Firstly run this command:
-
-```kubectl get ingress accounts -n default```
-
-Take note of the ADDRESS value — that's your ALB's DNS.
-
-2. Edit ```/etc/hosts``` on your machine
-
-```sudo nano /etc/hosts```
-
-3. Test in Postman.
