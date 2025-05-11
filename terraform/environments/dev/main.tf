@@ -107,6 +107,7 @@ module "alb_controller" {
   depends_on = [module.eks]
 }
 
+data "aws_caller_identity" "current" {}
 
 module "external_secrets" {
   source            = "../../modules/external-secrets"
