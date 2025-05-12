@@ -17,8 +17,9 @@ module "irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
   role_name                         = "${var.cluster_name}-external-secrets-irsa"
-  attach_inline_policy              = true
-  inline_policy                     = aws_iam_policy.secretsmanager_read.policy
+  role_policy_arns = {
+    secretsmanager_read = aws_iam_policy.secretsmanager_read.arn
+  }
   oidc_providers                    = {
     main = {
       provider_arn               = var.oidc_provider_arn

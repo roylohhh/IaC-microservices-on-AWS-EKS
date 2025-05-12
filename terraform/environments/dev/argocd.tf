@@ -7,7 +7,7 @@ resource "helm_release" "argocd" {
   create_namespace = true
 
   values = [
-    file("${path.module}/helm-values/argocd-values.yaml")
+    file("${path.module}/../../../k8s-base/argocd/root-app.yaml")
   ]
 
   depends_on = [module.eks]
