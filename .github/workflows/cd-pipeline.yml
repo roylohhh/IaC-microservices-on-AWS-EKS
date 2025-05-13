@@ -29,7 +29,35 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Terraform Init & Apply
+      - name: Terraform Apply Core Infra (VPC, EKS and ALB Controller)
+        run: |
+          cd terraform/environments/dev
+          terraform init
+          terraform apply -auto-approve \
+            -target=module.vpc \
+            -target=module.eks \
+            -target=module.alb_controller
+        env:
+          TF_VAR_region: ${{ secrets.AWS_REGION }}
+          TF_VAR_cluster_name: ${{ secrets.CLUSTER_NAME }}
+          TF_VAR_accountsdb_password: ${{ secrets.DB_PASSWORD_ACCOUNTS }}
+          TF_VAR_loansdb_password: ${{ secrets.DB_PASSWORD_LOANS }}
+          TF_VAR_cardsdb_password: ${{ secrets.DB_PASSWORD_CARDS }}
+      
+      - name: Set up kubeconfig and Validate ALB Controller
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.CLUSTER_NAME }}
+
+          echo "Waiting for ALB Controller pods to be ready"
+          kubectl rollout status deployment aws-load-balancer-controller -n kube-system -timemout=180s
+
+          echo "Ensuring ALB webhook service is ready..."
+          until kubectl get endpoints aws-load-balancer-webhook-service -n kube-system | grep -q '80'; do
+            echo "ALB webhook not ready yet..."
+            sleep 5
+          done
+
+      - name: Terraform Apply (Helm and Secrets Manager)
         run: |
           cd terraform/environments/dev
           terraform init
@@ -40,7 +68,7 @@ jobs:
           TF_VAR_accountsdb_password: ${{ secrets.DB_PASSWORD_ACCOUNTS }}
           TF_VAR_loansdb_password: ${{ secrets.DB_PASSWORD_LOANS }}
           TF_VAR_cardsdb_password: ${{ secrets.DB_PASSWORD_CARDS }}
-
+ 
       - name: Extract Terraform Outputs
         id: outputs
         run: |
