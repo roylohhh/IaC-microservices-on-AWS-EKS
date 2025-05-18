@@ -6,9 +6,18 @@ services = ["accounts", "loans", "cards"]
 secret_id = "banking-microservices"
 
 client = boto3.client("secretsmanager", region_name=os.environ["AWS_REGION"])
-existing_secret = json.loads(
+
+try:
+    existing_secret = json.loads(
     client.get_secret_value(SecretId=secret_id)["SecretString"]
-)
+    )
+except client.exceptions.ResourceNotFoundException:
+    print(f"[INFO] Secret '{secret_id}' not found. Creating new one.")
+    existing_secret = {}
+    client.create_secret(
+        Name=secret_id,
+        SecretString=json.dumps(existing_secret)
+    )
 
 for svc in services:
     upper = svc.upper()
