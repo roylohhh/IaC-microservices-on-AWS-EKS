@@ -139,7 +139,7 @@ jobs:
           || echo "Secret already exists"
 
   update-and-commit-values:
-    needs: create-ecr-secret
+    needs: [create-ecr-secret, provision-infra]
     runs-on: ubuntu-latest
 
     steps:
