@@ -25,7 +25,7 @@ for svc in services:
         f"{upper}_DB_HOST": os.environ[f"{svc}_rds_endpoint"],
         f"{upper}_DB_NAME": os.environ[f"DB_NAME_{upper}"],
         f"{upper}_DB_USER": os.environ[f"DB_USER_{upper}"],
-        f"{upper}_DB_PASS": os.environ[f"DB_PASS_{upper}"],
+        f"{upper}_DB_PASSWORD": os.environ[f"DB_PASSWORD_{upper}"],
     }
     existing_secret.update(secret_data)
 
