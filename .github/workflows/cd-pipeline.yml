@@ -108,26 +108,8 @@ jobs:
           loans_rds_endpoint: ${{ needs.provision-infra.outputs.loans_rds_endpoint }}
           cards_rds_endpoint: ${{ needs.provision-infra.outputs.cards_rds_endpoint }}
 
-  update-values:
-    needs: provision-infra
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-
-      - name: Set up Python & Install ruamel.yaml
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruamel.yaml
-
-      - name: Patch Helm values.yaml via Python
-        run: python scripts/patch_values.py
-        env:
-          ALB_SG_ID: ${{ needs.provision-infra.outputs.alb_sg_id }}
-
   create-ecr-secret:
-    needs: update-values
+    needs: update-secrets
     runs-on: ubuntu-latest
 
     steps:
@@ -153,13 +135,23 @@ jobs:
             --docker-server=${{ secrets.ECR_REGISTRY }} \
           || echo "Secret already exists"
 
-  commit-changes:
+  update-and-commit-values:
     needs: create-ecr-secret
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+
+      - name: Set up Python & Install ruamel.yaml
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruamel.yaml
+
+      - name: Patch Helm values.yaml via Python
+        run: python scripts/patch_values.py
+        env:
+          ALB_SG_ID: ${{ needs.provision-infra.outputs.alb_sg_id }}
 
       - name: Commit and Push Helm Changes
         run: |
@@ -175,4 +167,7 @@ jobs:
             git commit -m "Update Helm values with new ALB SG ID"
             git push origin main
           fi
-          
+
+
+
+            
