@@ -7,7 +7,7 @@ secret_id = "banking-microservices"
 
 client = boto3.client("secretsmanager", region_name=os.environ["AWS_REGION"])
 existing_secret = json.loads(
-    client.get_secret_value(SecretID=secret_id)["SecretString"]
+    client.get_secret_value(SecretId=secret_id)["SecretString"]
 )
 
 for svc in services:
