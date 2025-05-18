@@ -3,6 +3,9 @@ name: CD Pipeline
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   provision-infra:
     runs-on: ubuntu-latest
@@ -165,7 +168,7 @@ jobs:
           else
             echo "✅ Committing patched Helm values..."
             git commit -m "Update Helm values with new ALB SG ID"
-            git push origin main
+            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
           fi
 
 
