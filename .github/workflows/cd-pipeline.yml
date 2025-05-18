@@ -174,4 +174,4 @@ jobs:
             echo "✅ Committing patched Helm values..."
             git commit -m "Update Helm values with new ALB SG ID"
             git push origin main
-          fi
+          
