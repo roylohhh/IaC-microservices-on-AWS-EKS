@@ -14,15 +14,15 @@ image:
   tag: da0328e
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-imagePullSecrets: 
-  - name: ecr-secret
+imagePullSecrets:
+- name: ecr-secret
 # This is to override the chart name.
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: ''
+fullnameOverride: ''
 
 envFrom:
-  - secretRef:
-      name: cards-db-credentials
+- secretRef:
+    name: cards-db-credentials
 
 # This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
 serviceAccount:
@@ -34,7 +34,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: ''
 
 # This is for setting Kubernetes Annotations to a Pod.
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
@@ -65,18 +65,18 @@ service:
 ingress:
   enabled: true
   className: alb
-  annotations: 
+  annotations:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
     alb.ingress.kubernetes.io/group.name: core-services
-    alb.ingress.kubernetes.io/security-groups:  <ALB_SECURITY_GROUP_ID>
+    alb.ingress.kubernetes.io/security-groups: ''
   hosts:
-    - host: cards.fake.com
-      paths:
-        - path: /
-          pathType: Prefix
+  - host: cards.fake.com
+    paths:
+    - path: /
+      pathType: Prefix
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
