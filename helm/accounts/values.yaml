@@ -73,7 +73,7 @@ ingress:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
     alb.ingress.kubernetes.io/group.name: core-services
-    alb.ingress.kubernetes.io/security-groups: ''
+    alb.ingress.kubernetes.io/security-groups: sg-0f0d2a747c756c4ee
   hosts:
   - host: accounts.fake.com
     paths:
