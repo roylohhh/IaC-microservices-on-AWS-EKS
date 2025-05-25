@@ -164,7 +164,7 @@ jobs:
           kubectl apply -f k8s-base/argocd/root-app.yaml -n argocd
 
   update-and-commit-values:
-    needs: [create-ecr-secret, provision-infra]
+    needs: [apply-argocd-root-app, provision-infra]
     runs-on: ubuntu-latest
 
     steps:
